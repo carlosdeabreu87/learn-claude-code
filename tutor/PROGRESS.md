@@ -43,4 +43,4 @@ Done so far in s01: concept taught (restarted twice at the learner's request), h
 ## Open items
 - The learner's warm-up notebook is at `tutor/lessons/s01_python_REPL.ipynb`. They should move it to `my_harness/scratch/`.
 - `git push` to origin (`carlosdeabreu87/learn-claude-code`) failed with `Permission denied (publickey)`. The learner needs to set up an SSH key or switch to HTTPS. Commit `011f06c` is local only.
-- Uncommitted work: the move into `tutor/` (staged `git mv`), skill path updates, and the updated lesson/progress files.
+- ~~Uncommitted work~~: resolved, committed by 2026-11-26 (`e6d2517` onward).
