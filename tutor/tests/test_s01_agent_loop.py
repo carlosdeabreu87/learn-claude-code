@@ -1,6 +1,6 @@
 from fake_client import FakeClient, response, text, tool_use
 
-from my_harness.agent import TOOLS, agent_loop, run_bash
+from my_harness.agent import TOOLS, agent_loop, run_command
 
 
 # --- the tool ---------------------------------------------------------------
@@ -13,16 +13,16 @@ def test_tools_declares_a_single_bash_tool():
     assert schema["required"] == ["command"]
 
 
-def test_run_bash_returns_stdout():
-    assert run_bash("echo hello") == "hello"
+def test_run_command_returns_stdout():
+    assert run_command("echo hello") == "hello"
 
 
-def test_run_bash_includes_stderr():
-    assert "oops" in run_bash("echo oops 1>&2")
+def test_run_command_includes_stderr():
+    assert "oops" in run_command("echo oops 1>&2")
 
 
-def test_run_bash_reports_empty_output():
-    assert run_bash("true") == "(no output)"
+def test_run_command_reports_empty_output():
+    assert run_command("true") == "(no output)"
 
 
 # --- the loop ---------------------------------------------------------------
@@ -91,3 +91,42 @@ def test_loop_keeps_going_until_model_stops_calling_tools():
 
     assert len(client.calls) == 4
     assert len(messages) == 8
+
+
+# --- the REPL ---------------------------------------------------------------
+
+def test_repl_keeps_one_history_across_turns(monkeypatch, capsys):
+    """The REPL under __main__ must send earlier turns back with each new question."""
+    import builtins, runpy, warnings
+    import anthropic, dotenv
+
+    fake = FakeClient([response(text("first answer")), response(text("second answer"))])
+    monkeypatch.setattr(anthropic, "Anthropic", lambda *a, **k: fake)
+    monkeypatch.setattr(dotenv, "load_dotenv", lambda *a, **k: None)
+
+    queries = iter(["what's the current directory?", "what files are in it?", "q"])
+
+    def fake_input(prompt=""):
+        try:
+            return next(queries)
+        except StopIteration:
+            raise EOFError
+
+    monkeypatch.setattr(builtins, "input", fake_input)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)  # runpy: module already imported
+        try:
+            runpy.run_module("my_harness.agent", run_name="__main__")
+        except (SystemExit, EOFError):
+            pass
+
+    assert len(fake.calls) == 2, "expected one model call per question"
+    second = fake.calls[1]["messages"]
+    # the second question must arrive with the first turn still in the history
+    assert [m["role"] for m in second] == ["user", "assistant", "user"]
+    assert second[0]["content"] == "what's the current directory?"
+    assert second[-1]["content"] == "what files are in it?"
+    # and the final answers are printed
+    out = capsys.readouterr().out
+    assert "first answer" in out and "second answer" in out

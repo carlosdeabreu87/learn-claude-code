@@ -77,7 +77,7 @@ The Python module for running external commands. `subprocess.run(cmd, shell=True
 The `system` argument: standing instructions that frame every call ("You are a coding agent at /path..."). It's sent separately from `messages`. s10 builds it from parts at runtime.
 
 **Thinking block** *(s01)*
-A `type: "thinking"` content block holding the model's reasoning before it answers. It can come *before* the text block, which is why `content[0]` isn't always the answer.
+A `type: "thinking"` content block holding the model's reasoning before it answers. It can come *before* the text block, which is why `content[0]` isn't always the answer. It's a block, not a message: it sits inside an assistant message's `content` list. In the SDK it's a `ThinkingBlock` with fields `type` (`"thinking"`), `thinking` (the reasoning text) and `signature` (a check value the API uses to verify it when you send the block back). It has no `.text`. A related block type, `redacted_thinking`, holds encrypted reasoning in `data`. Keep thinking blocks in the history unchanged. See https://docs.claude.com/en/docs/build-with-claude/extended-thinking
 
 **Token** *(s01)*
 The unit models read and write in, roughly ¾ of an English word. Context limits, `max_tokens` and pricing are all counted in tokens.

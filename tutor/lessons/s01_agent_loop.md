@@ -60,9 +60,9 @@ _Answers:_
 - Check-in complete. Moved to step 4 (Build).
 
 ## Spec
-File: `my_harness/agent.py`. Tests: `tutor/tests/test_s01_agent_loop.py` (9 tests).
+File: `my_harness/agent.py`. Tests: `tutor/tests/test_s01_agent_loop.py` (10 tests; `test_repl_keeps_one_history_across_turns` added 2026-11-27 at the learner's request).
 - `TOOLS`: a list with one tool, `bash`. Its `input_schema` is an object with a required string `command`.
-- `run_bash(command: str) -> str`: runs in a shell and returns stdout + stderr, stripped.
+- `run_command(command: str) -> str` (renamed from `run_bash` at the learner's choice, 2026-11-27): runs in a shell and returns stdout + stderr, stripped.
   - No output → `"(no output)"`.
   - Timeout → a string starting with `"Error"`.
 - `agent_loop(messages, client, model, system="")`: changes `messages` in place and returns `None`.
@@ -76,6 +76,15 @@ Live task: `python -m my_harness.agent`, then ask: "how many .py files are in s0
 
 ## Hints given
 - (none)
+- 2026-11-27, test run on request (not a hint): collection fails because `run_bash` is missing (the function is named `run_command`). With an in-memory alias, 4 passed and 5 failed: no `(no output)` case; `MODEL` global used instead of the `model` param; tool result sent as a plain string instead of `tool_result` blocks, one user message per tool; `return` inside the while loop ends it after one turn.
+- 2026-11-27, level 2 (approach), empty-output test: `if result` tests the always-truthy `CompletedProcess`. Strip first, keep the text in a variable, then choose between that text and `"(no output)"` based on whether the text is empty.
+- 2026-11-27, level 2 (approach), tool-result test: (a) delete the `return messages` at the end of the while body so the loop runs again; (b) instead of appending the raw output string, build a `tool_result` dict (type, tool_use_id = block.id, content = output) per tool call, collect them in a list, and append one user message with that list after the for loop.
+- 2026-11-27, live run of "in which folder am I?": API 400 `messages.2.content.0.type: Field required`. Same bug as the 2 failing tests: the results list holds `{role, content}` message dicts instead of `tool_result` blocks. Fix explained: swap the `role` key for `type: "tool_result"` + `tool_use_id: block.id`.
+- 2026-11-27, follow-up: learner wrote `"type": "tool_use"` instead of `"tool_result"`; API 400 `messages.2.content.0.tool_use.id: Field required`. Explained the difference: tool_use = model's request (assistant), tool_result = harness's answer (user).
+- 2026-11-27, live crash: `AttributeError: 'ThinkingBlock' object has no attribute 'text'` from `content[0].text` (warm-up lesson 1). Approach given: loop over the blocks and print `.text` only where `.type == "text"`. Also pointed out: history is reset each turn ("what files are in it?" only worked because the model reran pwd), and the run used miniconda python instead of `.venv/bin/python`.
+- 2026-11-27, level 3 (pseudo-code) on request for code: REPL with one history created before the loop, append the user turn, call agent_loop, print the text blocks of the last message by `.type`. No Python given (tutor rule).
+- 2026-11-27, level 2: learner asked how to filter thinking blocks *from the messages list*. Corrected: never remove them from history (the API needs them back unchanged, especially during tool use); filter only when displaying: keep the blocks of the last message whose `.type == "text"`, then print their `.text`.
+- 2026-11-27, added test `test_repl_keeps_one_history_across_turns` on request. It runs the `__main__` block via `runpy` with a fake `Anthropic`, a no-op `load_dotenv` and scripted `input` (two questions, then `q`). It checks that the second model call sees `[user, assistant, user]` and that both answers are printed. Failed for the right reason: `['user'] != ['user', 'assistant', 'user']`.
 
 ## Review
 - (pending)
