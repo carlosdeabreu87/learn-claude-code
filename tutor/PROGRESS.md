@@ -43,5 +43,5 @@ Done so far in s01: concept taught (restarted twice at the learner's request), h
 ## Open items
 - **Learner's pending task (2026-11-27):** add comments to `my_harness/agent.py`. Ask about it before the s01 Review starts.
 - The learner's warm-up notebook is at `tutor/lessons/s01_python_REPL.ipynb`. They should move it to `my_harness/scratch/`.
-- `git push` to origin (`carlosdeabreu87/learn-claude-code`) failed with `Permission denied (publickey)`. The learner needs to set up an SSH key or switch to HTTPS. Commit `011f06c` is local only.
+- `git push` to origin (`carlosdeabreu87/learn-claude-code`) failed with `Permission denied (publickey)`. The learner needs to set up an SSH key or switch to HTTPS. Update 2026-11-27: the learner pushes from their own terminal (`e38fbfe` is on origin). Claude's shell has no SSH key loaded, so pushes from here fail; ask the learner to run `! git push`.
 - ~~Uncommitted work~~: resolved, committed by 2026-11-26 (`e6d2517` onward).
